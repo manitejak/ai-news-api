@@ -1,0 +1,42 @@
+{
+    "info": {
+      "name": "AI News Flask API",
+      "_postman_id": "your-id",
+      "description": "Test search and article retrieval",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Get All Articles (with keyword)",
+        "request": {
+          "method": "GET",
+          "header": [],
+          "url": {
+            "raw": "http://127.0.0.1:5000/articles?keyword=ai&limit=5",
+            "protocol": "http",
+            "host": ["127", "0", "0", "1"],
+            "port": "5000",
+            "path": ["articles"],
+            "query": [
+              {"key": "keyword", "value": "ai"},
+              {"key": "limit", "value": "5"}
+            ]
+          }
+        }
+      },
+      {
+        "name": "Get Article by ID",
+        "request": {
+          "method": "GET",
+          "url": {
+            "raw": "http://127.0.0.1:5000/article/1",
+            "protocol": "http",
+            "host": ["127", "0", "0", "1"],
+            "port": "5000",
+            "path": ["article", "1"]
+          }
+        }
+      }
+    ]
+  }
+  
