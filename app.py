@@ -60,9 +60,6 @@ def get_article_by_id(id):
     conn.close()
 
     if row:
-        columns = [desc[0] for desc in cursor.description]y
+        columns = [desc[0] for desc in cursor.description]
         return jsonify(dict(zip(columns, row)))
-    return jsonify({"error": "Article not found"}), 404
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    return jsonify({"error": "Article not found"}),
