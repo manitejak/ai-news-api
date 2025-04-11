@@ -1,11 +1,13 @@
 import time
-import sqlite3
+import psycopg2
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from psycopg2 import sql
+from urllib.parse import urlparse
 
 def setup_driver():
     service = Service(executable_path='C:\\Users\\ksman\\Music\\edgedriver_win64\\msedgedriver.exe')
@@ -16,16 +18,38 @@ def setup_driver():
     return driver, wait
 
 def create_database():
-    conn = sqlite3.connect('ai_articles.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS articles
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  title TEXT UNIQUE,
-                  url TEXT UNIQUE,
-                  summary TEXT,
-                  publication_date TEXT)''')
+    # Connect to the external Render PostgreSQL database
+    db_url = "postgresql://ai_articles_user:YbK3SjzaAYLs9nSMYa8HZP1Zd3UDxkTH@dpg-cvsbflur433s73c32psg-a.oregon-postgres.render.com/ai_articles"
+    
+    # Parse the database URL
+    result = urlparse(db_url)
+    username = result.username
+    password = result.password
+    database = result.path[1:]
+    hostname = result.hostname
+    port = result.port
+    
+    conn = psycopg2.connect(
+        host=hostname,
+        database=database,
+        user=username,
+        password=password,
+        port=port
+    )
+    cursor = conn.cursor()
+    
+    # Create table with PostgreSQL syntax
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS articles (
+            id SERIAL PRIMARY KEY,
+            title TEXT UNIQUE,
+            url TEXT UNIQUE,
+            summary TEXT,
+            publication_date TEXT
+        )
+    ''')
     conn.commit()
-    return conn, c
+    return conn, cursor
 
 def extract_publication_date(driver):
     """Extract publication date from specific element structure"""
@@ -233,9 +257,13 @@ def save_to_db(data, cursor, conn):
         
         save = input("Save these articles to database? (y/n): ").lower()
         if save == 'y':
-            cursor.executemany('''INSERT OR IGNORE INTO articles 
-                                (title, url, summary, publication_date)
-                                VALUES (?, ?, ?, ?)''', data)
+            # PostgreSQL uses ON CONFLICT instead of OR IGNORE
+            insert_query = sql.SQL('''
+                INSERT INTO articles (title, url, summary, publication_date)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (title) DO NOTHING
+            ''')
+            cursor.executemany(insert_query, data)
             conn.commit()
             print(f"✅ Saved {cursor.rowcount} articles to database")
         else:

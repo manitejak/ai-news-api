@@ -1,12 +1,25 @@
 from flask import Flask, request, jsonify
-import sqlite3
+import psycopg2
+import urllib.parse as urlparse
 
 app = Flask(__name__)
-DATABASE = 'ai_articles.db'
+
+# PostgreSQL credentials for Render's hosted database
+DATABASE_URL = "postgresql://ai_articles_user:YbK3SjzaAYLs9nSMYa8HZP1Zd3UDxkTH@dpg-cvsbflur433s73c32psg-a.oregon-postgres.render.com/ai_articles"
+
+# Parse the database URL to get the individual credentials
+url = urlparse.urlparse(DATABASE_URL)
+
+DB_PARAMS = {
+    'dbname': url.path[1:],  # Extract the database name (remove the leading '/')
+    'user': url.username,
+    'password': url.password,
+    'host': url.hostname,
+    'port': url.port
+}
 
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(**DB_PARAMS)
     return conn
 
 @app.route("/")
@@ -21,30 +34,34 @@ def get_articles():
 
     query = """
         SELECT * FROM articles
-        WHERE lower(title) LIKE ?
-           OR lower(summary) LIKE ?
+        WHERE lower(title) LIKE %s
+           OR lower(summary) LIKE %s
         ORDER BY publication_date DESC
-        LIMIT ? OFFSET ?
+        LIMIT %s OFFSET %s
     """
     params = (f"%{keyword}%", f"%{keyword}%", limit, offset)
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    results = cursor.execute(query, params).fetchall()
+    cursor.execute(query, params)
+    results = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]
     conn.close()
 
-    articles = [dict(row) for row in results]
+    articles = [dict(zip(columns, row)) for row in results]
     return jsonify(articles)
 
 @app.route("/article/<int:id>", methods=["GET"])
 def get_article_by_id(id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM articles WHERE id=?", (id,))
-    article = cursor.fetchone()
+    cursor.execute("SELECT * FROM articles WHERE id=%s", (id,))
+    row = cursor.fetchone()
     conn.close()
-    if article:
-        return jsonify(dict(article))
+
+    if row:
+        columns = [desc[0] for desc in cursor.description]y
+        return jsonify(dict(zip(columns, row)))
     return jsonify({"error": "Article not found"}), 404
 
 if __name__ == "__main__":
