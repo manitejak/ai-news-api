@@ -1,0 +1,136 @@
+Here’s a sample documentation file that outlines the steps, challenges, and solutions encountered during the development and deployment of your AI News API project:
+
+---
+
+# **AI News API Documentation**
+
+## **Overview**
+The **AI News API** is a Flask-based REST API that fetches and serves AI-related news articles. The articles are scraped and stored in a PostgreSQL database hosted on Render.com. The API provides endpoints to search for articles by keyword and retrieve an article by its ID.
+
+### **Live API URL:**
+- [https://ai-news-api-cjj4.onrender.com](https://ai-news-api-cjj4.onrender.com)
+
+## **API Endpoints**
+
+1. **Home Route**
+   - **GET /**
+   - Response:
+     ```json
+     { "message": "AI News API is running" }
+     ```
+
+2. **Get Articles**
+   - **GET /articles**
+   - Query Parameters:
+     - `keyword`: (optional) Search term to filter articles by title or summary.
+     - `limit`: (optional) Number of articles to return (default: 10).
+     - `offset`: (optional) Pagination offset (default: 0).
+   - Example Request:
+     ```text
+     GET https://ai-news-api-cjj4.onrender.com/articles?keyword=AI&limit=10&offset=0
+     ```
+   - Response:
+     ```json
+     [
+       {
+         "id": 1,
+         "title": "AI is Changing the World",
+         "summary": "AI is revolutionizing various industries...",
+         "publication_date": "2025-04-01"
+       },
+       ...
+     ]
+     ```
+
+3. **Get Article by ID**
+   - **GET /article/<int:id>**
+   - Example Request:
+     ```text
+     GET https://ai-news-api-cjj4.onrender.com/article/1
+     ```
+   - Response:
+     ```json
+     {
+       "id": 1,
+       "title": "AI is Changing the World",
+       "summary": "AI is revolutionizing various industries...",
+       "publication_date": "2025-04-01"
+     }
+     ```
+
+## **Setup and Deployment**
+
+### **Step 1: Environment Setup**
+- **Install Required Libraries**:
+  - `Flask`
+  - `psycopg2`
+  
+  Install via:
+  ```bash
+  pip install Flask psycopg2
+  ```
+
+- **Database Configuration**:
+  - The app connects to a PostgreSQL database hosted on Render.com. The credentials are parsed from the database URL provided by Render.
+
+### **Step 2: Scraping Data**
+- **Scraping Articles**:
+  - The data for AI-related news articles is scraped using Python scripts (e.g., using `requests`, `BeautifulSoup`, or `Selenium`) and stored in the PostgreSQL database.
+  - The scraping script fetches articles from popular sources and formats the data for storage.
+  
+- **Challenges**:
+  - **Issue**: The scraping process was difficult due to the usage of the free-tier Render environment, which limits the ability to run long processes like scraping directly on the platform.
+  - **Solution**: 
+    - The scraping data was stored in an external database on Render. The Flask API directly queries the Render PostgreSQL database to fetch the scraped articles, ensuring that long-running processes don’t affect the web service.
+  
+### **Step 3: Hosting the Flask API on Render**
+- **Create a Render App**:
+  - Create a new web service on Render and connect it to the GitHub repository containing the Flask app.
+  - Set up the **Procfile** to instruct Render on how to start the application:
+    ```
+    web: python app.py
+    ```
+
+- **Challenges**:
+  - **Issue**: The free-tier plan of Render had limitations, including slow response times during scraping and issues with persistent connections to external services like databases.
+  - **Solution**: 
+    - The solution was to use Render’s database hosting for the scraped data, ensuring the application could remain responsive without requiring direct interaction with the scraping process.
+    - Additional configurations were made to ensure the Flask app could fetch data asynchronously and efficiently.
+
+- **Deployment**:
+  - Set environment variables such as `DATABASE_URL` in the Render dashboard to securely manage sensitive information like database credentials.
+  - Upon deployment, Render automatically detected the `Procfile` and set up the application correctly.
+
+### **Step 4: Testing the API**
+- **Postman Collection**:
+  - A Postman collection was created to test the API, ensuring that each endpoint (Home Route, Get Articles, Get Article by ID) worked as expected.
+  - The Postman collection includes requests with different query parameters for searching articles and retrieving individual article data by ID.
+
+## **Challenges Encountered**
+
+### **1. Scraping Issues**
+- **Challenge**: Scraping AI-related articles required frequent updates to account for website changes and dynamic content. Some sites used AJAX to load data, which wasn't straightforward to scrape.
+- **Solution**: We used **Selenium** to interact with JavaScript-heavy pages and capture dynamic content, allowing for more robust scraping.
+
+### **2. Database Connectivity**
+- **Challenge**: Render’s free-tier web engine was not well-suited for running scraping scripts. This led to issues with connecting and storing data for extended periods.
+- **Solution**: The scraped data was stored in a **Render PostgreSQL database**, which ensured the data was available for the API to query. We also created a **separate data import** process to load the data periodically instead of running it continuously.
+
+### **3. Resource Limits on Render Free Tier**
+- **Challenge**: The free-tier plan on Render limited resources, including memory and processing power, affecting the scraping and data handling efficiency.
+- **Solution**: We optimized the scraping process to run in intervals (not constantly), using smaller batches and limiting the number of concurrent scraping threads. This minimized resource consumption and allowed for more efficient data handling on Render.
+
+### **4. Dependency Management**
+- **Challenge**: We faced difficulties with ensuring the proper versions of libraries and dependencies (such as `psycopg2` and `Flask`) worked correctly on Render’s platform, leading to errors during deployment.
+- **Solution**: To resolve this, we created a `requirements.txt` file and specified all necessary dependencies for the Flask app. This ensured that all required libraries were installed during deployment.
+
+### **5. URL Configuration for Database**
+- **Challenge**: Setting up the database connection URL to work with Render’s internal PostgreSQL URL.
+- **Solution**: We used Python’s `urllib.parse` to parse the database connection string from Render’s environment and dynamically extract the database credentials.
+
+---
+
+## **Conclusion**
+
+The AI News API project successfully fetches and serves AI news articles through a Flask-based API. By storing the scraped data in a PostgreSQL database hosted on Render.com and optimizing the scraping process, we were able to overcome the challenges related to free-tier limitations and resource management. The project provides a robust solution for accessing AI news articles with search functionality, ensuring scalability and performance.
+
