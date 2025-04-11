@@ -7,12 +7,12 @@ A simple web scraping and API project that fetches the latest AI-related news ar
 ## 📂 Project Structure
 
 ```
-├── scraper.py            # Selenium web scraper
-├── app.py                # Flask API app
-├── ai_articles.db        # SQLite database
-├── requirements.txt      # Project dependencies
-├── README.md             # This file
-└── postman_collection.json  # API tests
+/your-flask-app
+    ├── app.py              # Your main Flask app file
+    ├── requirements.txt    # Your Python dependencies
+    ├── Procfile            # The Procfile (without any extension)
+    └── other-files         # Any other files your app needs
+
 ```
 
 ---
